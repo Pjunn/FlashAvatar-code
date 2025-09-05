@@ -14,7 +14,11 @@ Create the environment:
 conda env create --file environment.yml
 conda activate FlashAvatar
 ```
-
+if you got error, then:
+```
+conda install -n FlashAvatar "mkl<2024.1" "intel-openmp<2024.1" mkl-service=2.4
+conda env update --name FlashAvatar --file environment.yml --prune
+```
 Install PyTorch3D:
 
 ```
@@ -38,6 +42,11 @@ metrical-tracker
         ├── checkpoint
     ├── <id2_name>
 ...
+```
+## FLAME preperation
+- **Download FLAME assets**
+```bash
+bash setup.sh
 ```
 ## Running
 - **Evaluating pre-trained model**
