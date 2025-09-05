@@ -69,9 +69,9 @@ if __name__ == "__main__":
     bg_color = [1, 1, 1] if lpt.white_background else [0, 1, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device=args.device)
     
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    vid_save_path = os.path.join(logdir, 'test.avi')
-    out = cv2.VideoWriter(vid_save_path, fourcc, 25, (args.image_res*2, args.image_res), True)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    vid_save_path = os.path.join(logdir, 'test.mp4')
+    out = cv2.VideoWriter(vid_save_path, fourcc, 25, (args.image_res*4, args.image_res), True)
 
     viewpoint = scene.getCameras().copy()
     codedict = {}
@@ -94,14 +94,20 @@ if __name__ == "__main__":
         render_pkg = render(viewpoint_cam, gaussians, ppt, background)
         image= render_pkg["render"]
         image = image.clamp(0, 1)
+        alpha = render_pkg["alpha"]
+        normal = render_pkg["normal"] * 0.5 + 0.5
+        depth = render_pkg["depth"] * alpha + (render_pkg["depth"] * alpha).mean() * (1 - alpha)
+        depth = (depth - depth.min()) / (depth.max() - depth.min())
 
         gt_image = viewpoint_cam.original_image
-        save_image = np.zeros((args.image_res, args.image_res*2, 3))
+        # save_image = np.zeros((args.image_res, args.image_res*4, 3))
         gt_image_np = (gt_image*255.).permute(1,2,0).detach().cpu().numpy()
         image_np = (image*255.).permute(1,2,0).detach().cpu().numpy()
+        depth_np = (depth*255.).permute(1,2,0).detach().cpu().numpy()
+        depth_np = np.repeat(depth_np, 3, axis=2)
+        normal_np = (normal*255.).permute(1,2,0).detach().cpu().numpy()
 
-        save_image[:, :args.image_res, :] = gt_image_np
-        save_image[:, args.image_res:, :] = image_np
+        save_image = np.concatenate([gt_image_np, image_np, depth_np, normal_np], axis=1)
         save_image = save_image.astype(np.uint8)
         save_image = save_image[:,:,[2,1,0]]
 
